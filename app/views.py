@@ -52,6 +52,19 @@ def game(game_id):
     ans['moves'] = [(move.row, move.column) for move in game.moves]
     return jsonify(ans)
 
+@root.route('/games/<int:game_id>/join', methods=['POST'])
+@login_required
+def join_game(game_id):
+    game = Game.query.get(game_id)
+    if game is None: abort(404)
+    if game.user1_name != current_user.name:
+        if game.user2_name is None:
+            game.user2_name = current_user.name
+            db.session.commit()
+        elif game.user2_name != current_user.name:
+            abort(403)
+    return ('', 204)
+
 @root.route('/games/<int:game_id>/moves', methods=['POST'])
 @login_required
 def game_moves(game_id):

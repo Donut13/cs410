@@ -158,6 +158,8 @@ class Game extends React.Component {
       createElement(
         CardContent, null,
         createElement(Typography, {variant: 'headline'}, `Game ${this.props.game_id}`),
+        createElement(Typography, {component: 'p'}, `X: ${this.state.user1}`),
+        createElement(Typography, {component: 'p'}, `O: ${this.state.user2}`),
         createElement(Typography, {component: 'p'}, `Next Player: ${this.state.x_is_next ? 'X' : 'O'}`),
         createElement(
           'div', null,
@@ -215,7 +217,11 @@ class App extends React.Component {
         ),
         createElement(
           Grid, {item: true, xs: 3},
-          createElement(JoinGame, {onJoin: game_id => this.setState({game_id: game_id})}),
+          createElement(JoinGame, {
+            onJoin: game_id => {
+              axios.post(`/games/${game_id}/join`).then(() => this.setState({game_id: game_id}));
+            },
+          }),
         ),
       );
     }
