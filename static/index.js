@@ -219,7 +219,7 @@ class App extends React.Component {
           Grid, {item: true, xs: 3},
           createElement(JoinGame, {
             onJoin: game_id => {
-              axios.post(`/games/${game_id}/join`).then(() => this.setState({game_id: game_id}));
+              axios.post(`/games/${game_id}`).then(() => this.setState({game_id: game_id}));
             },
           }),
         ),
