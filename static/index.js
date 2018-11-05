@@ -115,8 +115,8 @@ class Game extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      user1: null,
-      user2: null,
+      userX: null,
+      userO: null,
       board: [[null, null, null], [null, null, null], [null, null, null]],
       x_is_next: true,
     };
@@ -132,8 +132,8 @@ class Game extends React.Component {
         x_is_next = !x_is_next;
       }
       this.setState({
-        user1: res.data.user1_name,
-        user2: res.data.user2_name,
+        userX: (res.data.user1_move_first ? res.data.user1 : res.data.user2),
+        userO: (res.data.user1_move_first ? res.data.user2 : res.data.user1),
         board: board,
         x_is_next: x_is_next,
       });
@@ -158,8 +158,8 @@ class Game extends React.Component {
       createElement(
         CardContent, null,
         createElement(Typography, {variant: 'headline'}, `Game ${this.props.game_id}`),
-        createElement(Typography, {component: 'p'}, `X: ${this.state.user1}`),
-        createElement(Typography, {component: 'p'}, `O: ${this.state.user2}`),
+        createElement(Typography, {component: 'p'}, `X: ${this.state.userX}`),
+        createElement(Typography, {component: 'p'}, `O: ${this.state.userO}`),
         createElement(Typography, {component: 'p'}, `Next Player: ${this.state.x_is_next ? 'X' : 'O'}`),
         createElement(
           'div', null,
