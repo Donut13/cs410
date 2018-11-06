@@ -158,7 +158,7 @@ class Game extends React.Component {
   renderSquare(i, j) {
     const onClick = () => {
       if (!this.state.board[i][j] && !this.state.winner && this.myTurn()) axios.post(
-        `/games/${this.props.game_id}/moves`, {row: i, column: j},
+        `/games/${this.props.game_id}/moves`, [i, j],
       ).then(res => {
         this.makeMove(i, j);
         this.setState({winner: res.data.winner});

@@ -8,6 +8,7 @@ from tornado.escape import json_decode
 from tornado.ioloop import IOLoop
 from tornado.options import define, options, parse_command_line
 from tornado.web import Application, RequestHandler, HTTPError
+import base64
 import os.path
 import sqlalchemy
 
@@ -60,12 +61,22 @@ def whose_turn(game):
     n = len(game['moves'])
     return game['user1'] if (n % 2 == 0) == game['user1_move_first'] else game.get('user2')
 
+def authenticate(name, password):
+    sel = select([users.c.password]).where(users.c.name == name)
+    with engine.connect() as conn:
+        user = conn.execute(sel).fetchone()
+    return user is not None and user['password'] == password
+
 class BaseHandler(RequestHandler):
 
     def get_current_user(self):
-        ans = self.get_secure_cookie('user')
-        if ans is None: return None
-        return ans.decode()
+        user = self.get_secure_cookie('user')
+        if user is not None: return user.decode()
+        header = self.request.headers.get('Authorization')
+        if header is not None and header.startswith('Basic '):
+            user, password = base64.b64decode(header[6:]).decode('ascii').split(':', 1)
+            if authenticate(user, password): return user
+        return None
 
     def ensure_authenticated(self):
         if self.current_user is None: raise HTTPError(401)
@@ -86,10 +97,7 @@ class LoginHandler(BaseHandler):
 
     def post(self):
         user = json_decode(self.request.body)
-        sel = select([users.c.password]).where(users.c.name == user['name'])
-        with engine.connect() as conn:
-            user2 = conn.execute(sel).fetchone()
-        if user2 is None or user2['password'] != user['password']: raise HTTPError(401)
+        if not authenticate(user['name'], user['password']): raise HTTPError(401)
         self.set_secure_cookie('user', user['name'])
         self.set_status(204)
         self.finish()
@@ -132,12 +140,11 @@ class Moves(BaseHandler):
         game = game_details(game_id)
         if 'winner' in game: raise HTTPError(400)
         if whose_turn(game) != self.current_user: raise HTTPError(403)
-        move = json_decode(self.request.body)
+        i, j = json_decode(self.request.body)
         with engine.connect() as conn:
-            ins = moves.insert().values(game=game_id, row=move['row'], column=move['column'],
-                                        time=datetime.utcnow())
+            ins = moves.insert().values(game=game_id, row=i, column=j, time=datetime.utcnow())
             conn.execute(ins)
-        game['moves'].append((move['row'], move['column']))
+        game['moves'].append((i, j))
         event = {'move': game['moves'][-1]}
         w = winner(game)
         if w is not None: event['winner'] = w

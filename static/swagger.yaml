@@ -1,0 +1,132 @@
+openapi: 3.0.0
+
+info:
+  title: Tic Tac Toe
+
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    Move:
+      description: "Row and column number of a move"
+      type: array
+      items:
+        type: integer
+      minItems: 2
+      maxItems: 2
+      example: [0, 0]
+    Event:
+      type: object
+      properties:
+        move:
+          $ref: "#/components/schemas/Move"
+        winner:
+          type: string
+
+paths:
+  /games:
+    post:
+      summary: "Create a new game"
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                move_first:
+                  type: boolean
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game_id:
+                    type: integer
+  /games/{gameId}:
+    get:
+      summary: "Get details about a game"
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user1:
+                    type: string
+                  user2:
+                    type: string
+                  user1_move_first:
+                    type: boolean
+                  moves:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Move"
+                  winner:
+                    type: string
+    post:
+      summary: "Join an existing game"
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        204:
+          description: No Content
+  /games/{gameId}/moves:
+    post:
+      summary: "Make a move"
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Move"
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+  /games/{gameId}/wait:
+    post:
+      summary: "Wait for opponent to make a move"
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
