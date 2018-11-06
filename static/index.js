@@ -119,34 +119,50 @@ class Game extends React.Component {
       userO: null,
       board: [[null, null, null], [null, null, null], [null, null, null]],
       x_is_next: true,
+      winner: null,
     };
+  }
+
+  myTurn() {
+    return (this.props.user == this.state.userX) == this.state.x_is_next;
+  }
+
+  makeMove(i, j) {
+    this.state.board[i][j] = this.state.x_is_next ? 'X' : 'O';
+    this.setState({board: this.state.board, x_is_next: !this.state.x_is_next});
+  }
+
+  waitOpponent() {
+    axios.post(`/games/${this.props.game_id}/wait`).then(res => {
+      const [i, j] = res.data.move;
+      this.makeMove(i, j);
+      this.setState({winner: res.data.winner});
+    });
   }
 
   componentDidMount() {
     axios.get(`/games/${this.props.game_id}`).then(res => {
-      const board = this.state.board;
-      let x_is_next = this.state.x_is_next;
-      for (let ij of res.data.moves) {
-        const [i, j] = ij;
-        board[i][j] = x_is_next ? 'X' : 'O';
-        x_is_next = !x_is_next;
-      }
       this.setState({
         userX: (res.data.user1_move_first ? res.data.user1 : res.data.user2),
         userO: (res.data.user1_move_first ? res.data.user2 : res.data.user1),
-        board: board,
-        x_is_next: x_is_next,
+        winner: res.data.winner,
       });
+      for (let ij of res.data.moves) {
+        const [i, j] = ij;
+        this.makeMove(i, j);
+      }
+      if (!this.state.winner && !this.myTurn()) this.waitOpponent();
     });
   }
 
   renderSquare(i, j) {
     const onClick = () => {
-      if (!this.state.board[i][j]) axios.post(
+      if (!this.state.board[i][j] && !this.state.winner && this.myTurn()) axios.post(
         `/games/${this.props.game_id}/moves`, {row: i, column: j},
-      ).then(() => {
-        this.state.board[i][j] = this.state.x_is_next ? 'X' : 'O';
-        this.setState({board: this.state.board, x_is_next: !this.state.x_is_next});
+      ).then(res => {
+        this.makeMove(i, j);
+        this.setState({winner: res.data.winner});
+        if (!res.data.winner) this.waitOpponent();
       });
     };
     return createElement('button', {className: 'square', onClick}, this.state.board[i][j]);
@@ -161,6 +177,7 @@ class Game extends React.Component {
         createElement(Typography, {component: 'p'}, `X: ${this.state.userX}`),
         createElement(Typography, {component: 'p'}, `O: ${this.state.userO}`),
         createElement(Typography, {component: 'p'}, `Next Player: ${this.state.x_is_next ? 'X' : 'O'}`),
+        createElement(Typography, {component: 'p'}, `Winner: ${this.state.winner}`),
         createElement(
           'div', null,
           createElement(

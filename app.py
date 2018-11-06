@@ -20,6 +20,7 @@ engine = None
 opponent_move = {}
 
 def winner(game):
+    if 'user2' not in game: return None
     board = [[None] * 3 for _ in range(3)]
     users = (game['user1'], game['user2'])
     k = 0 if game['user1_move_first'] else 1
@@ -127,7 +128,8 @@ class Moves(BaseHandler):
 
     def post(self, game_id):
         self.ensure_authenticated()
-        game = game_details(int(game_id))
+        game_id = int(game_id)
+        game = game_details(game_id)
         if 'winner' in game: raise HTTPError(400)
         if whose_turn(game) != self.current_user: raise HTTPError(403)
         move = json_decode(self.request.body)
