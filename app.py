@@ -149,7 +149,8 @@ class Moves(BaseHandler):
         w = winner(game)
         if w is not None: event['winner'] = w
         if game_id in opponent_move:
-            for fut in opponent_move[game_id]: fut.set_result(event)
+            for fut in opponent_move[game_id]:
+                if not fut.done(): fut.set_result(event)
             del opponent_move[game_id]
         self.write(event)
 

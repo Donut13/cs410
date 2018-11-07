@@ -137,6 +137,9 @@ class Game extends React.Component {
       const [i, j] = res.data.move;
       this.makeMove(i, j);
       this.setState({winner: res.data.winner});
+    }).catch(err => {
+      if (err.response && err.response.status === 503) this.waitOpponent();
+      else throw err;
     });
   }
 
